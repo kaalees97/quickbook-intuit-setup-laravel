@@ -31,6 +31,20 @@
                         </div>
 
                         <div class="form-group">
+                            <label class="control-label col-sm-2" for="company_name">Company Name:</label>
+                            <div class="col-sm-10">
+                                <select class="form-control" id="company_id" name="company_id">
+                                    <option value="">Select Company</option>
+                                    <option value="1">Company 1</option>
+                                    <option value="2">Company 2</option>
+                                   
+                                    <!-- Add more options as needed -->
+                                </select>
+                            </div>
+                        </div>
+
+
+                        <div class="form-group">
                             <div class="col-sm-offset-2 col-sm-10">
                             <button type="submit" class="btn btn-default">Submit</button>
                             </div>
