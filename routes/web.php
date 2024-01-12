@@ -25,6 +25,8 @@ Route::get('/add-customer', [App\Http\Controllers\HomeController::class, 'add_cu
 
 Route::get('/edit-customer/{id}', [App\Http\Controllers\HomeController::class, 'edit_customer_form'])->name('editcustomerform');
 
+Route::get('/update-token-access', [App\Http\Controllers\HomeController::class, 'updated_access_tokens'])->name('tokenaccess');
+
 Route::post('/update-customer',[App\Http\Controllers\HomeController::class, 'update_customer_form'])->name('updates');
 
 Route::get('delete-customer/{id}', [App\Http\Controllers\HomeController::class, 'delete_customer'])->name('deletecust');

@@ -8,6 +8,7 @@ use QuickBooksOnline\API\DataService\DataService;
 use QuickBooksOnline\API\Data\IPPCustomer;
 use QuickBooksOnline\API\Facades\Customer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 
 class HomeController extends Controller
 {
@@ -36,23 +37,25 @@ class HomeController extends Controller
 
     public function add_customer_form()
     {
+        $this->updated_access_tokens();
         return view('add_customer_form');
     }
 
     // View Customer
 
     public function view_customer_form()
-    {   
-
-        $dataService = $this->updated_access_token();
+    {         
+           
+            $dataService = $this->updated_access_token();
+            $query = "SELECT * FROM Customer ORDER BY id DESC";
+            $customer_details = $dataService->Query($query);    
+            return view('view_customer_form',compact('customer_details'));   
 
         // $query = "SELECT * From Customer";
-        $query = "SELECT * FROM Customer ORDER BY id DESC";
-
-        $customer_details = $dataService->Query($query);
-
-        return view('view_customer_form',compact('customer_details'));
+       
     }
+
+
 
 
     // Edit Customer
@@ -262,17 +265,27 @@ class HomeController extends Controller
 
     public function savecustomer(Request $request)
     {
+      
+       
         $dataService = $this->updated_access_token();
+    
+        
         if($request->company_id==1)
         {
             $config = config('quickbooks');
+             // get token from db
+            $token_data=QuickBookCredentials::where('client_id',$config['client_id'])->first();  
+            $access_token= $token_data['access_token'];
+            $refresh_token= $token_data['refresh_token'];
+
+            
             $dataService = DataService::Configure([
                 'auth_mode'         => 'oauth2',
                 'ClientID'          => $config['client_id'],
                 'ClientSecret'      => $config['client_secret'],
                 'RedirectURI'       => $config['redirect_uri'],
-                'accessTokenKey'    => $config['access_token'],
-                'refreshTokenKey'   => $config['refresh_token'],
+                'accessTokenKey'    => $access_token,
+                'refreshTokenKey'   => $refresh_token,
                 'QBORealmID'        => $config['realm_id'],
                 'baseUrl'           => $config['base_url'],
             ]);
@@ -345,8 +358,8 @@ class HomeController extends Controller
             ]);
 
             try {
-                return $result = $dataService->Add($customer);
-                echo 'Successfully added11';
+                $result = $dataService->Add($customer);
+                echo 'Successfully added';
             } catch (ServiceException $ex) {
                 echo "New Customer Error:" . $ex->getMessage();
             }
@@ -354,9 +367,8 @@ class HomeController extends Controller
         }
 
         $this->p($customer);
-        // $this->p($request->all());
 
-        return view('add_customer_form');
+        //return view('add_customer_form');
     }
 
     public function updated_access_token()
@@ -365,15 +377,20 @@ class HomeController extends Controller
 
         $quickbook_credentials = $this->quickbook_credentials->where('status',0)->first();
 
-        $this->p($quickbook_credentials);
-    
-        $dataService = DataService::Configure([
+        $this->p($quickbook_credentials);     
+
+        // get token from db
+         $token_data=QuickBookCredentials::where('client_id',$config['client_id'])->first();  
+         $access_token= $token_data['access_token'];
+         $refresh_token= $token_data['refresh_token'];
+
+         $dataService = DataService::Configure([
             'auth_mode'                                     => 'oauth2',
             'ClientID'                                      => $config['client_id'],
             'ClientSecret'                                  => $config['client_secret'],
             'RedirectURI'                                   => $config['redirect_uri'],
-            'accessTokenKey'                                => $config['access_token'],
-            'refreshTokenKey'                               => $config['refresh_token'],
+            'accessTokenKey'                                => $access_token,
+            'refreshTokenKey'                               => $refresh_token,
             'QBORealmID'                                    => $config['realm_id'],
             'baseUrl'                                       => $config['base_url'],
             'token_refresh_interval_before_expiry'          => 1800,
@@ -385,12 +402,101 @@ class HomeController extends Controller
         $accessTokenValue = $accessTokenObj->getAccessToken();
         $refreshTokenValue = $accessTokenObj->getRefreshToken();
 
-      
+        // update token from db
+        QuickBookCredentials::where('client_id',$config['client_id'])->update(['access_token'=> $accessTokenValue, 'refresh_token'=> $refreshTokenValue]);  
+        
+        $result = [
+            "token_type"                     => "bearer",
+            "expires_in"                     => 3600,
+            "refresh_token"                  => $refreshTokenValue,
+            "x_refresh_token_expires_in"     => 15551893,
+            "access_token"                   => $accessTokenValue,
+        ];   
+        
 
+        echo "Result Array: <pre>";
+        print_r($result);
+        echo "</pre>";        
+      
         return $dataService;
 
     }
 
+  
+
+    public function updated_access_tokens()
+    {
+        $config = config('quickbooks');
+        $quickbook_credentials = $this->quickbook_credentials->where('status', 0)->first();
+        
+        $dataService = DataService::Configure([
+            'auth_mode'                                 => 'oauth2',
+            'ClientID'                                  => $config['client_id'],
+            'ClientSecret'                              => $config['client_secret'],
+            'RedirectURI'                               => $config['redirect_uri'],
+            'accessTokenKey'                            => $config['access_token'],
+            'refreshTokenKey'                           => $config['refresh_token'],
+            'QBORealmID'                                => $config['realm_id'],
+            'baseUrl'                                   => $config['base_url'],
+            'token_refresh_interval_before_expiry'      => 1800,
+        ]);
+        
+        $OAuth2LoginHelper = $dataService->getOAuth2LoginHelper();
+        $accessTokenObj = $OAuth2LoginHelper->refreshAccessTokenWithRefreshToken($config['refresh_token']);
+        
+        $accessTokenValue = $accessTokenObj->getAccessToken();
+        $refreshTokenValue = $accessTokenObj->getRefreshToken();
+
+        // Debugging output using echo
+        // echo "Access Token: " . $accessTokenValue . "<br>";
+        // echo "Refresh Token: " . $refreshTokenValue . "<br>";
+
+        // Debugging output using print_r
+        // echo "Config Array: <pre>";
+        // print_r($config);
+        // echo "</pre>";
+        
+        // Format the result as desired
+        $result = [
+            "token_type"                     => "bearer",
+            "expires_in"                     => 3600,
+            "refresh_token"                  => $refreshTokenValue,
+            "x_refresh_token_expires_in"     => 15551893,
+            "access_token"                   => $accessTokenValue,
+        ];
+        
+        
+
+        // echo "Result Array: <pre>";
+        // print_r($result);
+        // echo "</pre>";
+
+       
+        
+        $envFilePath = base_path('.env');
+
+        // Read the existing contents of the .env file
+        $envContent = file_get_contents($envFilePath);
+
+        // Update the values you want in the .env file
+        $updatedEnvContent = preg_replace('/QUICKBOOKS_REFRESH_TOKEN_COMPANY1=(.*)/', 'QUICKBOOKS_REFRESH_TOKEN_COMPANY1=' . $refreshTokenValue, $envContent);
+        $updatedEnvContent = preg_replace('/QUICKBOOKS_ACCESS_TOKEN_COMPANY1=(.*)/', 'QUICKBOOKS_ACCESS_TOKEN_COMPANY1=' . $accessTokenValue, $updatedEnvContent);
+
+        // Write the updated content back to the .env file
+        file_put_contents($envFilePath, $updatedEnvContent);
+
+        // Clear the configuration cache to apply the changes
+        Artisan::call('config:clear');
+
+        QuickBookCredentials::where('client_id',$config['client_id'])->update(['access_token'=> $accessTokenValue, 'refresh_token'=> $refreshTokenValue]);
+
+        // Convert the result to JSON and return it
+        return json_encode($result);
+
+       
+    }
+
+      
     public function p($var)
     {
         echo '<pre>';
