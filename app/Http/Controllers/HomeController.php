@@ -46,16 +46,35 @@ class HomeController extends Controller
     public function view_customer_form()
     {         
            
-            $dataService = $this->updated_access_token();
-            $query = "SELECT * FROM Customer ORDER BY id DESC";
-            $customer_details = $dataService->Query($query);    
-            return view('view_customer_form',compact('customer_details'));   
+        $dataService = $this->updated_access_token();
+        $query = "SELECT * FROM Customer ORDER BY id DESC";
+        $customer_details = $dataService->Query($query);    
+        return view('view_customer_form',compact('customer_details'));   
 
         // $query = "SELECT * From Customer";
        
     }
 
+    // Expenses List
 
+    public function viewexpenses_list()
+    {         
+        return view('expense_list');   
+    }
+
+    // Supplier List
+
+    public function supplier_details()
+    {         
+        return view('supplier_list');   
+    }
+
+    // Report List
+
+    public function report_detail()
+    {         
+        return view('report_list');   
+    }
 
 
     // Edit Customer

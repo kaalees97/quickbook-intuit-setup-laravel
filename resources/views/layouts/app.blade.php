@@ -61,6 +61,18 @@
                                 <a class="nav-link" href="{{ route('view_cust') }}">{{ __('Customer List') }}</a>
                             </li>
 
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('expenses') }}">{{ __('Expenses') }}</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('details.supplier') }}">{{ __('Supplier') }}</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('reportlisting') }}">{{ __('Reports') }}</a>
+                            </li>
+
                             <li class="nav-item dropdown">
                                 <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
                                     {{ Auth::user()->name }}
